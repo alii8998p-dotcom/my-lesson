@@ -982,7 +982,7 @@ const fa=s=>String(s).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d]),en=s=>String(s
 const RX=/[A-Za-z0-9!(){}\[\]∪∩'′=+×÷\/<>≤≥∈∉⊂∅^_-][A-Za-z0-9!(){}\[\]∪∩'′=+×÷\/<>≤≥∈∉⊂∅^_,. -]*/g;
 const fx=s=>String(s).replace(RX,m=>{const t=m.match(/^([\s\S]*?)([\s.,]*)$/);return '\u0001'+t[1]+'\u0002'+t[2]}).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\u0001/g,'<bdi class="mx">').replace(/\u0002/g,'</bdi>').replace(/\.{4,}/g,'<span class="bl"></span>');
 let ST={};try{ST=JSON.parse(localStorage.getItem('m1')||'{}')}catch(e){}
-const sv=()=>{try{localStorage.setItem('m1',JSON.stringify(ST))}catch(e){}},SL=li=>ST[li]||(ST[li]={d:{},b:0});
+let svT=0;const sv=()=>{try{localStorage.setItem('m1',JSON.stringify(ST))}catch(e){}clearTimeout(svT);svT=setTimeout(()=>{try{window.cloudSaveState&&window.cloudSaveState(ST)}catch(e){}},500)},SL=li=>ST[li]||(ST[li]={d:{},b:0});
 let tm=0;
 function grp(s,i){let d=0,j=i;for(;j<s.length;j++){if(s[j]=='{')d++;else if(s[j]=='}'&&--d==0)break}return[s.slice(i+1,j),j+1]}
 function tx(s){let o='',i=0;const M={'\\Rightarrow':'⇒','\\times':'×','\\dots':'…','\\quad':'  ','\\cdot':'·','\\le':'≤','\\ge':'≥'};
@@ -1064,14 +1064,14 @@ function draw(){
  const hub=$('#hub'),n=cur();hub.innerHTML='';document.documentElement.classList.toggle('mth',path[0]===MATHR);
  document.querySelectorAll('#leaves>section').forEach(s=>s.hidden=true);
  $('#tr').innerHTML=path.slice(-2).map(p=>'<bdi>'+p.t+'</bdi>').join(' › ')||'خانه';$('#bk').hidden=!path.length;
- if(!n)hub.append(mk('div','hero','<h1>آمادهٔ امتحان نهایی دوازدهم 🎯</h1><p>درس را انتخاب کن</p>'),grid(TREE,'duo'));
+ if(!n)hub.append(mk('div','hero','<h1>آمادهٔ امتحان نهایی دوازدهم 🎯</h1><p>'+(window.TGNAME?'سلام '+String(window.TGNAME).replace(/[&<>"']/g,'')+' 👋 · ':'')+'درس را انتخاب کن</p>'),grid(TREE,'duo'));
  else{hub.append(tint(mk('div','band','<span class="ic">'+n.e+'</span><div>'+ttl(n)+(n.s?'<small'+(n.en?' class="lt"':'')+'>'+n.s+'</small>':'')+'</div>'),n));
   if(n.leaf){const p=path[path.length-2],sb=p&&p.k.filter(k=>k.leaf&&!k.soon);
    if(sb&&sb.length>1){const sg=mk('div','seg');sb.forEach(k=>{const b=tint(mk('button',k===n?'on':'',k.e+' '+k.t),k);b.onclick=()=>{path[path.length-1]=k;draw()};sg.append(b)});hub.append(sg)}
    $('#'+n.leaf).hidden=false;if(n.m!=null)MOPEN(n.m)}
   else hub.append(grid(n.k,n.duo?'duo':n.k.length==4?'g2':''))}
  const R=document.documentElement.style;if(path[0]){const t=path[1]||path[0];R.setProperty('--hl','hsl('+t.h+' 92% 80%)');R.setProperty('--ac','hsl('+t.h+' '+t.sat+'% 52%)');R.setProperty('--pr','hsl('+t.h+' '+t.sat+'% 52%)')}else['--hl','--ac','--pr'].forEach(v=>R.removeProperty(v));scrollTo({top:0})}
-$('#bk').onclick=()=>{path.pop();draw()};$('#hm').onclick=()=>{path=[];draw()};
+window.__app={redrawHome:()=>{if(!path.length)draw()},persist:()=>sv(),mergeState:(li,o)=>{if(!o||typeof o!='object')return;const s=SL(li);Object.keys(o.d||{}).forEach(k=>{s.d[k]=Math.max(s.d[k]||0,o.d[k]||0)});s.b=Math.max(s.b||0,o.b||0)}};
 const pop=h=>{$('#pc').innerHTML=h;$('#pop').hidden=false};
 $('#pop').onclick=e=>{if(e.target.id=='pop'||e.target.id=='px')$('#pop').hidden=true};
 
@@ -1386,5 +1386,38 @@ $('#bk').hidden=true;draw();
       if (callback) callback(null, value);
     }
   }
+  // ورود با اکانت تلگرام + ذخیرهٔ پیشرفت در فضای ابری تلگرام
+  (function () {
+    const user = tg && tg.initDataUnsafe && tg.initDataUnsafe.user;
+    if (user && user.first_name) {
+      window.TGNAME = user.first_name;
+      if (window.__app) window.__app.redrawHome();
+    }
 
+    const hasCloud = !!(tg && tg.CloudStorage && tg.initData);
+    const KEYS = [0, 1, 2, 3, 4, 5, 6, 7].map(i => "m1_" + i);
+
+    window.cloudSaveState = function (state) {
+      if (!hasCloud) return;
+      try {
+        Object.keys(state).forEach(li => {
+          tg.CloudStorage.setItem("m1_" + li, JSON.stringify(state[li]), function () {});
+        });
+      } catch (e) {}
+    };
+
+    if (hasCloud && window.__app) {
+      try {
+        tg.CloudStorage.getItems(KEYS, function (err, vals) {
+          if (err || !vals) return;
+          KEYS.forEach((k, li) => {
+            if (vals[k]) {
+              try { window.__app.mergeState(li, JSON.parse(vals[k])); } catch (e) {}
+            }
+          });
+          window.__app.persist();
+        });
+      } catch (e) {}
+    }
+  })();
 </script></body></html>
