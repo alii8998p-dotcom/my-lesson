@@ -1350,6 +1350,7 @@ $('#bk').hidden=true;draw();
  document.addEventListener('keydown',e=>{if(s.hidden||/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key=='ArrowLeft')act('n');else if(e.key=='ArrowRight')act('p');else if(e.key==' '&&list[i]&&!e.target.closest('button')){e.preventDefault();list[i].click()}});
  build();render();
 })();
+</script>
  <script>
   const tg = window.Telegram?.WebApp;
   if (tg) {
