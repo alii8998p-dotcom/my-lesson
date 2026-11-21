@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl"><head><meta charset="utf-8">
+<html lang="fa" dir="rtl"><head><meta charset="utf-8"><script src="https://telegram.org/js/telegram-web-app.js">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>آمادهٔ امتحان نهایی دوازدهم</title>
 <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap" rel="stylesheet">
@@ -1350,4 +1350,40 @@ $('#bk').hidden=true;draw();
  document.addEventListener('keydown',e=>{if(s.hidden||/INPUT|TEXTAREA/.test(e.target.tagName))return;if(e.key=='ArrowLeft')act('n');else if(e.key=='ArrowRight')act('p');else if(e.key==' '&&list[i]&&!e.target.closest('button')){e.preventDefault();list[i].click()}});
  build();render();
 })();
+ <script>
+  const tg = window.Telegram?.WebApp;
+  if (tg) {
+    tg.ready();
+
+    const tgUser = tg.initDataUnsafe?.user;
+    if (tgUser) {
+      const nameEl = document.getElementById("tg-user-name");
+      if (nameEl) {
+        nameEl.innerText = tgUser.first_name;
+      }
+    }
+  }
+
+  function saveUserData(key, value, callback) {
+    if (tg && tg.CloudStorage) {
+      tg.CloudStorage.setItem(key, String(value), (err, ok) => {
+        if (callback) callback(err, ok);
+      });
+    } else {
+      localStorage.setItem(key, String(value));
+      if (callback) callback(null, true);
+    }
+  }
+
+  function loadUserData(key, callback) {
+    if (tg && tg.CloudStorage) {
+      tg.CloudStorage.getItem(key, (err, value) => {
+        if (callback) callback(err, value);
+      });
+    } else {
+      const value = localStorage.getItem(key);
+      if (callback) callback(null, value);
+    }
+  }
+</script>
 </script></body></html>
